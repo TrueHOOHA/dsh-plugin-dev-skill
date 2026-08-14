@@ -1,0 +1,4 @@
+interface:
+  display_name: "DSH Plugin Dev"
+  short_description: "Develop and package DeepSeek Harness plugins"
+  default_prompt: "Use -plugin-dev to create or modify a DeepSeek Harness plugin following Cordis conventions."
