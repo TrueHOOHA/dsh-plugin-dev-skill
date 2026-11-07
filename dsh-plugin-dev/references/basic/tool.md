@@ -44,5 +44,5 @@ pnpm dsh web --patch ./scratch-plugin/cordis.yml
 ## 下一步
 
 - [插件配置](https://deepseek-harness.github.io/deepseek-harness/develop/basic/config) — 让问候语可配置。
-- [工具编写参考](https://deepseek-harness.github.io/deepseek-harness/reference/cookbook/adding-a-tool) — 查阅嵌套 schema、规范值、后台工作、策略钩子、Code Mode 和 UI 卡片。
+- [工具编写参考](https://deepseek-harness.github.io/deepseek-harness/reference/cookbook/adding-a-tool) — 查阅嵌套 schema、规范值、后台工作、策略钩子、PTC 模式和 UI 卡片。
 - [能力分层](https://deepseek-harness.github.io/deepseek-harness/develop/practice/) — 将可替换能力拆分为 Service Definition、Service Provider 和 Consumer 三类包。

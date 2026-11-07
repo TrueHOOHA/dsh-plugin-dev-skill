@@ -18,7 +18,7 @@ Cordis 配置项除了 `name` 和 `config` ，还接受其他元数据：
 
 ## 热模块替换
 
-卸载会释放 effect（ [第 2 章](https://deepseek-harness.github.io/deepseek-harness/develop/cordis-tutorial/02-lifecycle-and-effects) ），加载则遵循依赖关系（ [第 3 章](https://deepseek-harness.github.io/deepseek-harness/develop/cordis-tutorial/03-services) ），因此 HMR 可以先卸载、再加载，以替换正在运行的插件。 `@deepseek-ai/cordis-plugin-hmr` 插件会监视文件，并在保存时执行这一过程。
+卸载会释放 effect（ [第 2 章](https://deepseek-harness.github.io/deepseek-harness/develop/cordis-tutorial/02-lifecycle-and-effects) ），加载则遵循依赖关系（ [第 3 章](https://deepseek-harness.github.io/deepseek-harness/develop/cordis-tutorial/03-services) ），因此 HMR 可以先卸载、再加载，以替换正在运行的插件。 `@deepseek-ai/dsh-hmr` 插件会监视文件，并在保存时执行这一过程。
 
 在 `tmp/cordis-tutorial` 中编写 `cordis.yml` ：
 
@@ -28,7 +28,7 @@ Cordis 配置项除了 `name` 和 `config` ，还接受其他元数据：
 - id: timer
   name: '@deepseek-ai/cordis-plugin-timer'
 - id: hmr
-  name: '@deepseek-ai/cordis-plugin-hmr'
+  name: '@deepseek-ai/dsh-hmr'
   config:
     root: ['.']
 - id: hello

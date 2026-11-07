@@ -6,8 +6,9 @@
 
 ```ts
 import type { Context } from '@deepseek-ai/cordis'
+import { brandString } from '@deepseek-ai/dsh-brand'
 import { defineTool } from '@deepseek-ai/dsh-tools'
-import { CallId } from '@deepseek-ai/dsh-llm'
+import type { ToolCallId } from '@deepseek-ai/dsh-llm'
 
 export const name = 'greet-tool'
 export const inject = ['tools']
@@ -29,10 +30,10 @@ export function apply(ctx: Context) {
   }))
 
   // Drive one call through the real execution pipeline, standing in for
-  // the model. CallId brands the correlation id a provider would issue.
+  // the model. ToolCallId brands the correlation id a provider would issue.
   void (async () => {
     const result = await ctx.tools.execute({
-      callId: CallId('demo-1'),
+      callId: brandString<ToolCallId>('demo-1'),
       name: 'greet',
       arguments: { name: 'Cordis' },
       signal: new AbortController().signal,
@@ -42,7 +43,7 @@ export function apply(ctx: Context) {
 }
 ```
 
-这里的每个模式都来自前几章： `inject: ['tools']` （ [第 3 章](https://deepseek-harness.github.io/deepseek-harness/develop/cordis-tutorial/03-services) ）会让插件等待工具注册表就绪； `ctx.tools.register(...)` 会把注册 disposer 附着到插件（ [第 2 章](https://deepseek-harness.github.io/deepseek-harness/develop/cordis-tutorial/02-lifecycle-and-effects) ），因此卸载时会注销工具。 `defineTool` 将 `parameters` 规约转换为向模型展示的 JSON Schema，推导 `args` 的类型，并在 `execute` 运行前校验模型提供的参数。工具返回由 `output.schema` 声明的规范值； `output.render` 则作为 Native renderer（原生渲染器），另行生成可持久化的结果内容。
+这里的每个模式都来自前几章： `inject: ['tools']` （ [第 3 章](https://deepseek-harness.github.io/deepseek-harness/develop/cordis-tutorial/03-services) ）会让插件等待工具注册表就绪； `ctx.tools.register(...)` 会把注册 disposer 附着到插件（ [第 2 章](https://deepseek-harness.github.io/deepseek-harness/develop/cordis-tutorial/02-lifecycle-and-effects) ），因此卸载时会注销工具。 `defineTool` 将 `parameters` 规约转换为向模型展示的 JSON Schema，推导 `args` 的类型，并在 `execute` 运行前校验模型提供的参数。工具返回由 `output.schema` 声明的规范值； `output.render` 则作为 Native renderer（原生渲染器），另行生成 Native 与可持久化的结果内容。
 
 ## 观察插件
 
@@ -90,7 +91,7 @@ logger 会先触发： `tools/result` 在结果物化过程中发出，发生在
 
 ## 从这里走向完整 agent（智能体）
 
-真实 agent 就是这套组合再加上更多插件：LLM（大语言模型）适配器、agent loop（智能体循环）、持久化和运行入口。对照 [examples/headless-agent/cordis.yml](https://github.com/deepseek-ai/deepseek-harness/blob/master/examples/headless-agent/cordis.yml) ，你现在已经可以读懂其中每个配置项。将 `greet-tool.ts` 加入该文件的副本即可。
+真实 agent 就是这套组合再加上更多插件：LLM（大语言模型）适配器、agent loop（智能体循环）、持久化和运行入口。对照 [base profile 层](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/bundle/base/cordis.patch.yml) 与 [headless 层](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/bundle/headless/cordis.patch.yml) ——现在你已经能读懂其中的每个配置项。通过一份小的 `--patch` overlay 把你的 `greet-tool.ts` 加入组合。
 
 后续可以阅读：
 

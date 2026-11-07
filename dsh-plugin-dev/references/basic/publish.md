@@ -58,6 +58,8 @@ export function apply() {
 
 没有 `dsh.bundle` 声明的包仍然可以安装，但只作为普通依赖： `dsh plugin` 会打印警告，且不激活任何层。如果一个库供插件包 import，而不是供用户启用，就使用这种包格式。
 
+`patch` 也接受一个有序文件列表，例如 `["./base.patch.yml", "./web.patch.yml"]`；启动器按该顺序把它们作为同一层应用，每个文件里的相对插件路径都相对于该文件解析。用 `engines.dsh` SemVer 范围声明组合包支持的 dsh 发布版本，例如 `"engines": { "dsh": ">=0.2.0 <0.3.0" }`。安装与 profile 启动都会拒绝运行中的 dsh 不满足范围的组合包；未写 `engines.dsh` 时，则改为检查其 `@deepseek-ai/dsh*` peer dependency 范围。
+
 ### profile manifest
 
 profile 目录包含两个文件：
@@ -65,7 +67,7 @@ profile 目录包含两个文件：
 - `package.json` — profile 的树外插件依赖（由 pnpm 管理），加上 `dsh.profile` manifest 及其有序的 `bundles` 列表。
 - `cordis.patch.yml` — 用户自己的 patch 层，在每个组合包层之后应用。
 
-profile manifest 从不需要手写： `dsh plugin` 负责创建和维护它。下一节展示其结果。
+profile manifest 从不需要手写： `dsh --profile <name> --from-default-profile <template>` 可以从随附的应用模板创建或重置一份 profile，而 `dsh plugin` 会创建以 base 为底座的 profile 并维护其已安装组合包列表。下一节展示其结果。
 
 ## 安装进 profile
 
@@ -103,6 +105,12 @@ dsh --profile demo
 ```
 
 `dsh plugin --profile demo remove dsh-hello-plugin` 会同时移除依赖和对应的层。
+
+### link 出的源码目录如何解析依赖
+
+link 的 checkout 保持自己的 `node_modules`。插件必须与宿主共享实例的 dsh 包，应同时声明在 `peerDependencies` 和 `devDependencies` 中（harness 自身的包就是这样做的）：在该 manifest 的查找位置上，运行中 dsh 的运行时解析里已存在的 peer 使用安装副本；devDependency 副本服务于你的类型检查器和独立测试。独立版本化的第三方依赖和无状态的 dsh 工具放在 `dependencies` 中。
+
+普通 link 的 import 遵循 Node 的祖先目录顺序，并检查每个目录当前的 peer 声明：更近的物理包胜过更高处的 peer 声明；link 目标可以没有 `package.json`，祖先 peer 仍然生效，即使该 manifest 旁边没有物理 `node_modules`。显式 `require.resolve(..., { paths })` 始终是原生行为，包括 profile 内的路径。这些规则被 npm、Desktop 和源码启动共享；它们不会使已加载模块失效，也不校验 peer 版本范围。link 一个宽泛的 checkout 不会把 peer 拦截应用到运行安装自身的包目录；目标位于 profile 内部（包括其 pnpm store）的 link 仍属于 profile 自有的安装内容，而非外部 link 根；重叠的外部 link 不改变查找顺序——每个请求仍从其 importer 目录出发。
 
 ## 加载顺序
 

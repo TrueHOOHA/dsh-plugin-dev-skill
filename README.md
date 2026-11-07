@@ -43,9 +43,15 @@ dsh-plugin-dev/
     │   ├── events.md   # 事件机制与 Harness 事件
     │   └── service.md  # 服务注入、提供与隔离
     └── practice/       # 进阶设计模式与集成
-        ├── index.md    # 三层能力设计：定义 → 提供 → 消费
-        └── llm-adapter.md  # 接入新模型提供商：LlmAdapter.stream()
+        ├── index.md          # 三层能力设计：定义 → 提供 → 消费
+        ├── llm-adapter.md    # 接入新模型提供商：LlmAdapter.stream()
+        └── dynamic-cordis.md # Creator 模式：Plugin Manager 与运行时巡检
 ```
+
+`references/reference/` 为架构参考（源自官方 reference/ 文档）：
+
+- `architecture.md` — 架构总览：profile/bundle、turn 流程、事件域、扩展点地图
+- `cordis-primer.md` — Cordis 入门：五个核心观念、分发模式、waterfall 语义
 
 ## 内容概览
 
@@ -58,12 +64,12 @@ dsh-plugin-dev/
 | 自动清理 | 所有经 `ctx` 注册的内容都是 effect，卸载自动回收；自定义资源用 `ctx.effect()` 包裹 |
 | Fiber 状态 | `PENDING → LOADING → ACTIVE → UNLOADING → DISPOSED`（可 `FAILED`） |
 | 工具 | `defineTool` 自动生成 JSON Schema、校验参数、卸载时注销 |
-| 配置 | 需同时导出 `interface Config` 与 `const Config: Schema<Config>` |
+| 配置 | 需同时导出 `interface Config` 与 `const Config: Schema<Config>`；`.volatile()` 字段支持免重挂载热更新 |
 | 服务 | 提供方继承 `Service`，消费方声明 `inject`，`group: true` + `isolate` 实现隔离 |
 | 事件 | `emit` / `parallel` / `serial` / `bail` / `waterfall` 五种模式 |
 | LLM 适配器 | 继承 `LlmAdapter` 实现 `stream()`，按块顺序产出 StreamChunk |
-| 发布 | 本地用 `--patch`，分发用 npm 包 + `dsh.bundle`，`dsh plugin add` 安装 |
-| HMR | 加载 `cordis-plugin-hmr` + logger + timer 实现保存即重载 |
+| 发布 | 本地用 `--patch`，分发用 npm 包 + `dsh.bundle`（支持 `engines.dsh` 版本声明），`dsh plugin add` 安装 |
+| HMR | 加载 `@deepseek-ai/dsh-hmr` + logger + timer 实现保存即重载 |
 
 ### 核心代码示例
 

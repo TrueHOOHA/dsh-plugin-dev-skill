@@ -50,7 +50,8 @@ export function apply(ctx: Context, config: Config) {
 `stream()` 必须按以下协议生成分片：
 
 ```ts
-import { CallId, type StreamChunk } from '@deepseek-ai/dsh-llm'
+import { brandString } from '@deepseek-ai/dsh-brand'
+import type { StreamChunk, ToolCallId } from '@deepseek-ai/dsh-llm'
 
 async function* exampleChunks(): AsyncIterable<StreamChunk> {
   // 1. Start each content block with block-start.
@@ -72,7 +73,7 @@ async function* exampleChunks(): AsyncIterable<StreamChunk> {
   yield {
     type: 'tool-call-delta',
     index: 1,
-    id: CallId('call-123'),
+    id: brandString<ToolCallId>('call-123'),
     name: 'bash',
     argumentsDelta: '{"command":"ls"}',
   }
@@ -81,7 +82,7 @@ async function* exampleChunks(): AsyncIterable<StreamChunk> {
     index: 1,
     block: {
       type: 'tool-call',
-      id: CallId('call-123'),
+      id: brandString<ToolCallId>('call-123'),
       name: 'bash',
       arguments: '{"command":"ls"}',
     },
@@ -141,7 +142,7 @@ ctx.llm.registerAdapter(['my-provider'], adapter)
 
 仓库中包含以下两个完整实现：
 
-- `packages/llm/llm-deepseek/` — DeepSeek API 适配器（OpenAI 兼容格式）
+- `packages/llm/llm-deepseek/` — DeepSeek API 适配器（Messages API 格式）
 - `packages/llm/llm-pi-ai/` — Pi AI 适配器（不同的 API 格式）
 
 对比这两个已交付的适配器，可以看到同一套 harness 契约如何在不同提供方 SDK 之上实现。

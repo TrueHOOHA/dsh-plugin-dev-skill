@@ -81,7 +81,10 @@ export function apply(ctx: Context, config: Config) { /* validated config */ }
 
 Must export BOTH `interface Config` AND `const Config: Schema<Config>`.
 Invalid config → FAILED state with clear error. Use `!!js` in YAML for dynamic
-values: `config: { apiKey: !!js process.env.API_KEY }`.
+values — valid only inside `config` and an entry's `disabled` field:
+`config: { apiKey: !!js process.env.API_KEY }`. Mark per-operation fields with
+`.volatile()`: edits update the live reference and emit `loader/volatile-update`
+without remounting the plugin (read via `.get()`; values are frozen snapshots).
 See `references/basic/config.md`.
 
 ### Services
@@ -107,7 +110,11 @@ its own provider instance. See `references/framework/service.md`.
 | `waterfall` | `ctx.waterfall(n, ...args, next)` | Middleware chain |
 
 Waterfall listeners **must** call `next()` unless intentionally short-circuiting.
-Key harness events: `agent/step`, `tools/result`, `session/event`.
+Key harness events: `agent/pre-step`, `agent/request`, `llm/stream`,
+`tools/pre-execute`/`tools/execute`/`tools/post-execute`, `tools/result`,
+`session/event`. The first four groups are waterfalls; `agent/turn-stopping`
+is serial. `turn/*`, `step/*`, `tool/call`, `tool/result` are durable session-event
+types, not Cordis events — observe them via `session/event`.
 See `references/framework/events.md`.
 
 ### LLM Adapters
@@ -146,16 +153,28 @@ See `references/practice/index.md`.
       config: { greeting: 'Hi' }
 ```
 
-**Distribution**: npm package with `dsh.bundle` manifest + `cordis.patch.yml`.
-Install: `dsh plugin --profile demo add ./hello-plugin`.
+**Distribution**: npm package with `dsh.bundle` manifest + `cordis.patch.yml`
+(`patch` also accepts an ordered file list). Declare supported dsh releases with
+`engines.dsh` SemVer. Install: `dsh plugin --profile demo add ./hello-plugin`.
 Layer order: profile bundles → profile patch → home patch → `--patch` overlays.
 Later layers win by row (no deep merge).
 See `references/basic/publish.md`.
 
 ### HMR
 
-Load `@deepseek-ai/cordis-plugin-hmr` + `@deepseek-ai/cordis-plugin-logger-console`
-+ `@deepseek-ai/cordis-plugin-timer` to auto-reload on file save.
+Load `@deepseek-ai/dsh-hmr` + `@deepseek-ai/cordis-plugin-logger-console`
++ `@deepseek-ai/cordis-plugin-timer` to auto-reload on file save. HMR logs
+through the logger service and injects `timer` for debouncing — without the
+timer it sits in PENDING silently.
+
+### Where New Behavior Goes
+
+Attach new behavior to a documented extension point: model providers on
+`ctx.llm`, model-facing tools on `ctx.tools`, human commands on `ctx.commands`,
+background jobs on `ctx.jobs`, filesystem providers/policy on `ctx.fs`, process
+confinement on `ctx.sandbox`; intercept requests/tools/turns via `agent/*` and
+`tools/*` events; add model-facing context with `agent.inject()`. Full map:
+`references/reference/architecture.md`.
 
 ### Diagnosing PENDING
 
@@ -174,5 +193,6 @@ Detailed guides in the `references/` directory:
 | --- | --- |
 | `references/basic/` | First plugin, tools, config, publishing |
 | `references/framework/` | Lifecycle, services, events |
-| `references/practice/` | Three-layer design, LLM adapters |
+| `references/practice/` | Three-layer design, LLM adapters, prompt-driven plugin config |
 | `references/cordis-tutorial/` | Step-by-step Cordis framework tutorial |
+| `references/reference/` | Architecture map (profiles/bundles, turn flow, extension points), Cordis primer |

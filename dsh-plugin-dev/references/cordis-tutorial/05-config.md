@@ -64,6 +64,32 @@ ValidationError: invalid config:
 
 插件的 fiber 进入 FAILED 状态，本教程的启动器打印错误后以状态码 1 退出。如果某个插件的配置通过了 schema 验证，但其中指定的资源或提供方不可用，该插件也应当在能解析该引用时立即拒绝。
 
+## 易变字段（volatile）
+
+对于插件在每次操作中都会读取的字段，使用 `.volatile()` 标记：修改该字段只会更新其稳定引用，而不会重新挂载插件。用 `.get()` 读取：
+
+```ts
+import type { Context } from '@deepseek-ai/cordis'
+import type {} from '@deepseek-ai/cordis-plugin-loader'
+import Schema from '@deepseek-ai/schemastery'
+
+export const Config = Schema.object({
+  greeting: Schema.string().default('Hello').volatile(),
+})
+
+export function apply(ctx: Context, config: ReturnType<typeof Config>) {
+  ctx.on('loader/volatile-update', () => {
+    console.log(config.greeting.get())
+  })
+}
+```
+
+直接调用 `Config(raw)` 同样返回引用。没有默认值的可选字段也有引用；字段缺席时 `.get()` 返回 `undefined`。可以保留引用，也可以把某个值捕获下来供单次操作使用（包括跨 `await` ），但不要把它留存给后续操作。对象和数组值是普通数据的递归冻结快照（分离副本）；函数、类实例和循环引用会被拒绝。
+
+Loader 比较原始配置时会忽略 schema 声明的 volatile 字段。仅 volatile 值变化时，会经由插件声明的 `internal/config` 钩子解析并校验；当所有普通生效值仍相同时，Loader 把新值提交进运行中的引用，并发出一次实例本地的 `loader/volatile-update` 事件（以键路径数组携带变化字段），绕过目标插件的 `internal/update`；值相等则不通知。校验失败的候选会被记录，运行中的引用保持不变，等待下一次激活。普通生效值（包括表达式求值结果）变化或与普通字段同时变化时，仍走既有的 update 流程，旧引用保持不变且不会收到通知。Group/Include 仍会向子项分发更新。直接 `fiber.update()`、代码替换和依赖替换保留各自的生命周期；`noSave` 仍然控制直接更新的持久化。通知使用普通 `emit`，不会等待资源重配置。
+
+volatile 字段必须声明在固定的对象路径上，或者把整个对象或数组标记为 volatile。数组内部、字典、union/intersect 分支、lazy schema、transform 之中或另一个 volatile 值之内的独立引用会被拒绝。配置文件里存储的是普通值； `simplify()` 可以解包引用。序列化的 schema 保留字段类型、默认值、角色和 volatile 标记，供 schema 驱动的表单使用；既有的 settings 消费方继续使用各自的 settings 接口。
+
 ## 计算得到的配置值
 
 本仓库使用的 loader 支持 `!!js` 标签，用于必须在加载时计算的配置值：
